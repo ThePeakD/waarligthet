@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vind de locatie</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        #map {
+            max-width: 100%;
+            cursor: crosshair; /* Verander de cursor naar een kruisje wanneer je over de kaart gaat */
+            position: relative;
+        }
+
+        .location-marker {
+            width: 20px;
+            height: 20px;
+            background-color: red;
+            border-radius: 50%;
+            position: absolute;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Vind de locatie</h1>
+    <img src="afbeelding1.jpg" alt="Kaart" id="map" onclick="checkLocation(event)">
+    <div class="location-marker" id="marker"></div>
+    <p id="question">Druk op de kaart om een vraag te beantwoorden.</p>
+    <p id="congratulations" style="display: none;">Goed gedaan, je hebt het juiste antwoord gevonden!</p>
+
+    <script>
+        let questions = [];
+
+        // Inladen van het JSON-bestand
+        fetch('questions.json')
+            .then(response => response.json())
+            .then(data => {
+                questions = data;
+                displayRandomQuestion();
+            })
+            .catch(error => console.error('Fout bij het inladen van vragen:', error));
+
+        let currentQuestionIndex = -1;
+
+        function checkLocation(event) {
+            const x = event.clientX - document.getElementById("map").getBoundingClientRect().left;
+            const y = event.clientY - document.getElementById("map").getBoundingClientRect().top;
+
+            if (isLocationCorrect(x, y, currentQuestionIndex)) {
+                showMarker(x, y);
+                showCongratulations();
+                currentQuestionIndex++;
+                if (currentQuestionIndex < questions.length) {
+                    displayRandomQuestion();
+                }
+            }
+        }
+
+        function isLocationCorrect(x, y, index) {
+            const question = questions[index];
+            const tolerance = 150;
+
+            const correctX = question.coordinates.x;
+            const correctY = question.coordinates.y;
+
+            return Math.abs(x - correctX) <= tolerance && Math.abs(y - correctY) <= tolerance;
+        }
+
+        function showMarker(x, y) {
+            const currentLocationMarker = document.getElementById("marker");
+            currentLocationMarker.style.left = x - 10 + "px";
+            currentLocationMarker.style.top = y - 10 + "px";
+            currentLocationMarker.style.display = "block";
+        }
+
+        function showCongratulations() {
+            const congratulations = document.getElementById("congratulations");
+            congratulations.style.display = "block";
+        }
+
+        function displayRandomQuestion() {
+            const questionElement = document.getElementById("question");
+            if (questions.length > 0) {
+                const randomIndex = getRandomIndex();
+                currentQuestionIndex = randomIndex;
+                questionElement.textContent = questions[randomIndex].question;
+            } else {
+                questionElement.textContent = "Alle vragen zijn beantwoord.";
+            }
+        }
+
+        function getRandomIndex() {
+            const unusedIndices = questions.map((_, index) => index).filter(index => index !== currentQuestionIndex);
+            if (unusedIndices.length > 0) {
+                const randomIndex = unusedIndices[Math.floor(Math.random() * unusedIndices.length)];
+                return randomIndex;
+            } else {
+                return -1;
+            }
+        }
+    </script>
+</body>
+</html>
